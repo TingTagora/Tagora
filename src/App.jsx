@@ -5,9 +5,11 @@ import PrivateRoute from './routes/PrivateRoute';
 import Login from './pages/Login';
 import SignUp from './pages/SignUp';
 import Dashboard from './pages/Dashboard';
+import PrankAdminLogin from './components/PrankAdminLogin';
+import PrankAdminDashboard from './components/PrankAdminDashboard';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { submitJobApplication } from './utils/firestoreUtils';
+// import { submitJobApplication } from './utils/firestoreUtils';
 import { toast } from 'react-toastify';
 
 // Simple Application Form Component
@@ -39,14 +41,26 @@ const ApplicationForm = ({ onClose }) => {
     setIsSubmitting(true);
     
     try {
+
       const applicationData = {
-        ...formData,
-        userId: currentUser?.uid || null,
-        userEmail: currentUser?.email || formData.email,
-        appliedAt: new Date().toISOString(),
+        firebaseUid: currentUser?.uid,
+        userEmail: currentUser?.email,
+        jobTitle: formData.position,
+        fullName: formData.fullName,
+        phone: formData.phone,
+        experience: formData.experience,
+        coverLetter: formData.coverLetter,
+        portfolio: formData.portfolio,
+        availability: formData.availability,
       };
 
-      await submitJobApplication(applicationData);
+      // Send application to Express API (MongoDB Atlas)
+      const response = await fetch('http://localhost:5000/api/applications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(applicationData),
+      });
+      if (!response.ok) throw new Error('Failed to submit');
       toast.success('Application submitted successfully! We will review your application and get back to you within 2-3 business days.');
       onClose();
     } catch (error) {
@@ -470,6 +484,10 @@ function App() {
                 <Dashboard />
               </PrivateRoute>
             } />
+
+            {/* Prank Admin Routes */}
+            <Route path="/admin" element={<PrankAdminLogin />} />
+            <Route path="/admin/dashboard" element={<PrankAdminDashboard />} />
           </Routes>
           
           {/* Toast Notifications */}

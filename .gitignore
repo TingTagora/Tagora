@@ -49,6 +49,9 @@ coverage/
 .eslintcache
 .prettier-cache
 
+# Admin panel - separate app (not committed to main repo)
+admin-panel/
+
 # Temporary files
 tmp/
 temp/

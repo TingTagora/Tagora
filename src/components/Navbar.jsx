@@ -7,7 +7,7 @@ import { useAuth } from '../context/AuthContext';
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const { user, logout } = useAuth();
+  const { user, logout, isAdmin } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -97,7 +97,17 @@ const Navbar = () => {
             >
               Apply Now
             </motion.button>
-            
+            {isAdmin && (
+              <Link to="/admin">
+                <motion.button
+                  className="btn-primary"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  Admin Dashboard
+                </motion.button>
+              </Link>
+            )}
             {user ? (
               <div className="flex items-center space-x-4">
                 <span className="text-dark-text-light text-sm">
@@ -171,7 +181,17 @@ const Navbar = () => {
                   >
                     Apply Now
                   </motion.button>
-                  
+                  {isAdmin && (
+                    <Link to="/admin" onClick={() => setIsOpen(false)}>
+                      <motion.button
+                        className="w-full btn-primary"
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        Admin Dashboard
+                      </motion.button>
+                    </Link>
+                  )}
                   {user ? (
                     <div className="space-y-2">
                       <div className="text-dark-text-light text-sm">

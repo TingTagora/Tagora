@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
-import { getUserApplications } from '../utils/firestoreUtils';
+// import { getUserApplications } from '../utils/firestoreUtils';
 import { toast } from 'react-toastify';
 
 const Dashboard = () => {
@@ -14,7 +14,9 @@ const Dashboard = () => {
     const fetchApplications = async () => {
       if (currentUser) {
         try {
-          const userApps = await getUserApplications(currentUser.uid);
+          const res = await fetch(`http://localhost:5000/api/applications/user/${currentUser.uid}`);
+          if (!res.ok) throw new Error('Failed to fetch');
+          const userApps = await res.json();
           setApplications(userApps);
         } catch (error) {
           console.error('Error fetching applications:', error);
@@ -24,7 +26,6 @@ const Dashboard = () => {
         }
       }
     };
-
     fetchApplications();
   }, [currentUser]);
 
@@ -191,9 +192,9 @@ const Dashboard = () => {
             ) : (
               <div className="space-y-4">
                 {applications.map((application) => (
-                  <div key={application.id} className="border border-slate-700 rounded-lg p-4">
+                  <div key={application._id} className="border border-slate-700 rounded-lg p-4">
                     <div className="flex justify-between items-start mb-2">
-                      <h3 className="text-lg font-semibold text-white">{application.position}</h3>
+                      <h3 className="text-lg font-semibold text-white">{application.jobTitle}</h3>
                       <span className={`px-2 py-1 rounded text-xs ${
                         application.status === 'pending' ? 'bg-yellow-600 text-yellow-100' :
                         application.status === 'reviewed' ? 'bg-blue-600 text-blue-100' :
@@ -204,7 +205,7 @@ const Dashboard = () => {
                       </span>
                     </div>
                     <p className="text-gray-300 text-sm mb-2">
-                      Applied: {application.createdAt?.toDate?.()?.toLocaleDateString() || 'Recently'}
+                      Applied: {new Date(application.createdAt).toLocaleDateString()}
                     </p>
                     {application.experience && (
                       <p className="text-gray-400 text-sm">Experience: {application.experience}</p>
