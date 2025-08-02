@@ -1,21 +1,38 @@
 require('dotenv').config();
 const express = require('express');
-const mongoose = require('mongoose');
 const cors = require('cors');
 const admin = require('firebase-admin');
+const { initializeDatabase } = require('./config/database');
+const { createTables } = require('./config/schema');
 
 // Initialize Firebase Admin SDK
 admin.initializeApp({
-  projectId: 'tagora-e5ab7',  // Your Firebase project ID
+  projectId: process.env.FIREBASE_PROJECT_ID || 'tagora-e5ab7',
 });
 
 const app = express();
-app.use(cors());
+
+// Configure CORS for your hosted applications
+const corsOptions = {
+  origin: [
+    'http://localhost:3000',           // Local main app
+    'http://localhost:3001',           // Local admin panel
+    'https://tagora.online',   // Hosted main app
+    'https://tagoring.onrender.com/', // Hosted admin panel
+    // Add your actual Render URLs here
+  ],
+  credentials: true,
+  optionsSuccessStatus: 200
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
-mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log('MongoDB connected'))
-  .catch(err => console.error(err));
+// Initialize Turso database
+initializeDatabase();
+createTables()
+  .then(() => console.log('Turso database connected and tables created'))
+  .catch(err => console.error('Database initialization error:', err));
 
 // Example route
 app.get('/', (req, res) => {

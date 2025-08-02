@@ -3,18 +3,22 @@ import { useAuth } from '../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 // import { getUserApplications } from '../utils/firestoreUtils';
 import { toast } from 'react-toastify';
+import ProfileEditModal from '../components/ProfileEditModal';
 
 const Dashboard = () => {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [userProfile, setUserProfile] = useState(null);
 
   useEffect(() => {
     const fetchApplications = async () => {
       if (currentUser) {
         try {
-          const res = await fetch(`http://localhost:5000/api/applications/user/${currentUser.uid}`);
+          const apiUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+          const res = await fetch(`${apiUrl}/api/applications/user/${currentUser.uid}`);
           if (!res.ok) throw new Error('Failed to fetch');
           const userApps = await res.json();
           setApplications(userApps);
@@ -26,7 +30,29 @@ const Dashboard = () => {
         }
       }
     };
+
+    const fetchUserProfile = async () => {
+      if (currentUser) {
+        try {
+          const apiUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+          const response = await fetch(`${apiUrl}/api/users/profile`, {
+            headers: {
+              'Authorization': `Bearer ${await currentUser.getIdToken()}`
+            }
+          });
+          
+          if (response.ok) {
+            const profile = await response.json();
+            setUserProfile(profile);
+          }
+        } catch (error) {
+          console.error('Error fetching user profile:', error);
+        }
+      }
+    };
+
     fetchApplications();
+    fetchUserProfile();
   }, [currentUser]);
 
   const handleLogout = async () => {
@@ -94,12 +120,25 @@ const Dashboard = () => {
               <p className="text-gray-300">
                 <span className="font-medium">Email:</span> {currentUser?.email}
               </p>
+              {userProfile?.phone && (
+                <p className="text-gray-300">
+                  <span className="font-medium">Phone:</span> {userProfile.phone}
+                </p>
+              )}
+              {userProfile?.location && (
+                <p className="text-gray-300">
+                  <span className="font-medium">Location:</span> {userProfile.location}
+                </p>
+              )}
               <p className="text-gray-300">
                 <span className="font-medium">Status:</span> 
                 <span className="text-green-400 ml-1">Active</span>
               </p>
             </div>
-            <button className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg transition-colors duration-300">
+            <button 
+              onClick={() => setIsProfileModalOpen(true)}
+              className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg transition-colors duration-300"
+            >
               Edit Profile
             </button>
           </div>
@@ -222,6 +261,13 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* Profile Edit Modal */}
+      <ProfileEditModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+        currentUser={currentUser}
+      />
     </div>
   );
 };

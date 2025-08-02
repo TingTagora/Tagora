@@ -3,7 +3,7 @@
 <!-- Use this file to provide workspace-specific custom instructions to Copilot. For more details, visit https://code.visualstudio.com/docs/copilot/copilot-customization#_use-a-githubcopilotinstructionsmd-file -->
 
 ## Project Overview
-This is a modern job application website built with React, Tailwind CSS, and Firebase authentication. The project follows a dark theme design pattern with specific color schemes and component architecture.
+This is a modern job application website built with React, Tailwind CSS, and Firebase authentication. The project follows a dark theme design pattern with specific color schemes and component architecture. The project includes a PrankAdmin panel component as part of the main functionality.
 
 ## Code Style and Conventions
 - Use functional components with React hooks
@@ -29,7 +29,7 @@ This is a modern job application website built with React, Tailwind CSS, and Fir
 - Implement proper error handling with toast notifications
 
 ## File Structure
-- `/src/components/` - Reusable UI components
+- `/src/components/` - Reusable UI components (includes PrankAdminLogin, PrankAdminDashboard)
 - `/src/pages/` - Full page components
 - `/src/context/` - React Context providers
 - `/src/routes/` - Route protection components

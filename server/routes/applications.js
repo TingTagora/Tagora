@@ -3,10 +3,10 @@ const Application = require('../models/Application');
 const { authenticate, requireAdmin } = require('../middleware/auth');
 const router = express.Router();
 
-// Get all applications (admin only)
+//     Get all applications (admin only)
 router.get('/', authenticate, requireAdmin, async (req, res) => {
   try {
-    const applications = await Application.find().sort({ createdAt: -1 });
+    const applications = await Application.find();
     res.json(applications);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching applications', error: error.message });
@@ -15,9 +15,12 @@ router.get('/', authenticate, requireAdmin, async (req, res) => {
 
 // Create an application
 router.post('/', async (req, res) => {
-  const application = new Application(req.body);
-  await application.save();
-  res.status(201).json(application);
+  try {
+    const application = await Application.create(req.body);
+    res.status(201).json(application);
+  } catch (error) {
+    res.status(500).json({ message: 'Error creating application', error: error.message });
+  }
 });
 
 // Update application status (admin only)
@@ -48,9 +51,13 @@ router.delete('/:id', authenticate, requireAdmin, async (req, res) => {
 
 // Get applications by Firebase UID
 router.get('/user/:firebaseUid', async (req, res) => {
-  const { firebaseUid } = req.params;
-  const applications = await Application.find({ firebaseUid }).sort({ createdAt: -1 });
-  res.json(applications);
+  try {
+    const { firebaseUid } = req.params;
+    const applications = await Application.findByFirebaseUid(firebaseUid);
+    res.json(applications);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching user applications', error: error.message });
+  }
 });
 
 module.exports = router;

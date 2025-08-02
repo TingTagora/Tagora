@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import PrivateRoute from './routes/PrivateRoute';
@@ -26,15 +26,33 @@ const ApplicationForm = ({ onClose }) => {
     availability: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [availableJobs, setAvailableJobs] = useState([]);
 
-  const positions = [
-    'Content Writing',
-    'Social Media Management', 
-    'Web Development',
-    'Digital Marketing',
-    'Graphic Design',
-    'Virtual Assistant'
-  ];
+  useEffect(() => {
+    fetchAvailableJobs();
+  }, []);
+
+  const fetchAvailableJobs = async () => {
+    try {
+      const apiUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+      const response = await fetch(`${apiUrl}/api/jobs/active`);
+      if (response.ok) {
+        const jobs = await response.json();
+        setAvailableJobs(jobs);
+      }
+    } catch (error) {
+      console.error('Error fetching jobs:', error);
+      // Fallback to default positions
+      setAvailableJobs([
+        { title: 'Content Writer' },
+        { title: 'Social Media Manager' },
+        { title: 'Web Developer' },
+        { title: 'Digital Marketing Specialist' },
+        { title: 'Graphic Designer' },
+        { title: 'Virtual Assistant' }
+      ]);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -54,8 +72,9 @@ const ApplicationForm = ({ onClose }) => {
         availability: formData.availability,
       };
 
-      // Send application to Express API (MongoDB Atlas)
-      const response = await fetch('http://localhost:5000/api/applications', {
+      // Send application to Express API (Turso Database)
+      const apiUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+      const response = await fetch(`${apiUrl}/api/applications`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(applicationData),
@@ -128,10 +147,13 @@ const ApplicationForm = ({ onClose }) => {
               value={formData.position}
               onChange={(e) => setFormData({...formData, position: e.target.value})}
               className="w-full p-3 bg-slate-700 text-white rounded-lg border border-slate-600 focus:border-blue-500 focus:outline-none"
+              disabled={availableJobs.length === 0}
             >
-              <option value="">Select a position</option>
-              {positions.map(pos => (
-                <option key={pos} value={pos}>{pos}</option>
+              <option value="">
+                {availableJobs.length === 0 ? 'No positions available' : 'Select a position'}
+              </option>
+              {availableJobs.map((job, index) => (
+                <option key={job.id || index} value={job.title}>{job.title}</option>
               ))}
             </select>
           </div>
@@ -289,6 +311,31 @@ const NavigationBar = ({ onShowApplicationForm, scrollToSection }) => {
 // Main Tagora Website
 const TagoraHome = () => {
   const [showApplicationForm, setShowApplicationForm] = useState(false);
+  const [jobs, setJobs] = useState([]);
+  const [loadingJobs, setLoadingJobs] = useState(true);
+
+  useEffect(() => {
+    fetchJobs();
+  }, []);
+
+  const fetchJobs = async () => {
+    try {
+      const apiUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+      const response = await fetch(`${apiUrl}/api/jobs/active`);
+      if (response.ok) {
+        const jobData = await response.json();
+        setJobs(jobData);
+      } else {
+        console.error('Failed to fetch jobs');
+        setJobs([]);
+      }
+    } catch (error) {
+      console.error('Error fetching jobs:', error);
+      setJobs([]);
+    } finally {
+      setLoadingJobs(false);
+    }
+  };
 
   const scrollToSection = (sectionId) => {
     const element = document.getElementById(sectionId);
@@ -296,45 +343,6 @@ const TagoraHome = () => {
       element.scrollIntoView({ behavior: 'smooth' });
     }
   };
-
-  const openings = [
-    {
-      title: 'Content Writer',
-      type: 'Part-time',
-      skills: ['Content Writing', 'SEO', 'Research'],
-      description: 'Create engaging content for blogs, websites, and social media.'
-    },
-    {
-      title: 'Social Media Manager',
-      type: 'Part-time',
-      skills: ['Social Media', 'Content Creation', 'Analytics'],
-      description: 'Manage social media presence and create engaging campaigns.'
-    },
-    {
-      title: 'Web Developer',
-      type: 'Part-time',
-      skills: ['HTML/CSS', 'JavaScript', 'React'],
-      description: 'Build and maintain modern, responsive websites.'
-    },
-    {
-      title: 'Digital Marketing Specialist',
-      type: 'Part-time',
-      skills: ['SEO', 'PPC', 'Analytics'],
-      description: 'Drive online growth through strategic digital marketing.'
-    },
-    {
-      title: 'Graphic Designer',
-      type: 'Part-time',
-      skills: ['Photoshop', 'Illustrator', 'Canva'],
-      description: 'Create stunning visual content for various platforms.'
-    },
-    {
-      title: 'Virtual Assistant',
-      type: 'Part-time',
-      skills: ['Admin Tasks', 'Communication', 'Organization'],
-      description: 'Provide administrative support and help streamline operations.'
-    }
-  ];
 
   return (
     <div className="min-h-screen bg-slate-900 text-gray-300">
@@ -358,8 +366,13 @@ const TagoraHome = () => {
             </p>
             <div className="space-x-4">
               <button 
-                onClick={() => setShowApplicationForm(true)}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-300 transform hover:scale-105"
+                onClick={() => jobs.length > 0 && setShowApplicationForm(true)}
+                disabled={jobs.length === 0}
+                className={`px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-300 transform hover:scale-105 ${
+                  jobs.length === 0 
+                    ? 'bg-gray-600 text-gray-400 cursor-not-allowed' 
+                    : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white'
+                }`}
               >
                 Apply Now
               </button>
@@ -406,28 +419,54 @@ const TagoraHome = () => {
               Current <span className="text-blue-500">Openings</span>
             </h2>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {openings.map((job, index) => (
-                <div key={index} className="bg-slate-800 p-6 rounded-lg hover:bg-slate-700 transition-colors duration-300">
-                  <div className="flex justify-between items-start mb-4">
-                    <h3 className="text-xl font-bold text-white">{job.title}</h3>
-                    <span className="bg-blue-600 text-white px-2 py-1 rounded text-sm">{job.type}</span>
+              {loadingJobs ? (
+                // Loading skeleton
+                [...Array(6)].map((_, index) => (
+                  <div key={index} className="bg-slate-800 p-6 rounded-lg animate-pulse">
+                    <div className="h-6 bg-slate-700 rounded mb-2"></div>
+                    <div className="h-4 bg-slate-700 rounded w-20 mb-4"></div>
+                    <div className="h-4 bg-slate-700 rounded mb-2"></div>
+                    <div className="h-4 bg-slate-700 rounded mb-4"></div>
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      <div className="h-6 bg-slate-700 rounded w-16"></div>
+                      <div className="h-6 bg-slate-700 rounded w-12"></div>
+                    </div>
+                    <div className="h-10 bg-slate-700 rounded"></div>
                   </div>
-                  <p className="text-gray-300 mb-4">{job.description}</p>
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {job.skills.map((skill, i) => (
-                      <span key={i} className="bg-slate-600 text-gray-300 px-2 py-1 rounded text-xs">
-                        {skill}
-                      </span>
-                    ))}
-                  </div>
-                  <button 
-                    onClick={() => setShowApplicationForm(true)}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg transition-colors duration-300"
-                  >
-                    Apply for this role
-                  </button>
+                ))
+              ) : jobs.length === 0 ? (
+                // Empty state
+                <div className="col-span-full flex flex-col items-center justify-center py-16">
+                  <div className="text-6xl mb-4">💼</div>
+                  <h3 className="text-2xl font-bold text-white mb-2">No Job Openings Available</h3>
+                  <p className="text-gray-400 text-center max-w-md">
+                    We're currently not hiring, but check back soon! New opportunities are added regularly.
+                  </p>
                 </div>
-              ))}
+              ) : (
+                jobs.map((job, index) => (
+                  <div key={job.id || index} className="bg-slate-800 p-6 rounded-lg hover:bg-slate-700 transition-colors duration-300">
+                    <div className="flex justify-between items-start mb-4">
+                      <h3 className="text-xl font-bold text-white">{job.title}</h3>
+                      <span className="bg-blue-600 text-white px-2 py-1 rounded text-sm">Part-time</span>
+                    </div>
+                    <p className="text-gray-300 mb-4">{job.description}</p>
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {(job.requirements ? (typeof job.requirements === 'string' ? JSON.parse(job.requirements) : job.requirements) : []).map((skill, i) => (
+                        <span key={i} className="bg-slate-600 text-gray-300 px-2 py-1 rounded text-xs">
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                    <button 
+                      onClick={() => setShowApplicationForm(true)}
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg transition-colors duration-300"
+                    >
+                      Apply for this role
+                    </button>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </section>
@@ -443,10 +482,15 @@ const TagoraHome = () => {
             </p>
             <div className="space-x-4">
               <button 
-                onClick={() => setShowApplicationForm(true)}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-300"
+                onClick={() => jobs.length > 0 && setShowApplicationForm(true)}
+                disabled={jobs.length === 0}
+                className={`px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-300 ${
+                  jobs.length === 0 
+                    ? 'bg-gray-600 text-gray-400 cursor-not-allowed' 
+                    : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white'
+                }`}
               >
-                Start Your Application
+                {jobs.length === 0 ? 'No Positions Available' : 'Start Your Application'}
               </button>
               <button 
                 onClick={() => window.open('mailto:careers@tagora.com')}

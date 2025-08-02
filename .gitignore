@@ -19,6 +19,10 @@ dist-ssr
 .env.test.local
 .env.production.local
 
+# Server folder (separate repository)
+server/
+admin-panel/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -49,7 +53,7 @@ coverage/
 .eslintcache
 .prettier-cache
 
-# Admin panel - separate app (not committed to main repo)
+
 admin-panel/
 
 # Temporary files

@@ -52,7 +52,7 @@ const PrankAdminDashboard = () => {
     await new Promise(resolve => setTimeout(resolve, 2500));
     
     // Redirect to Rick Roll
-    window.location.href = 'https://youtu.be/R0857R5_6tM';
+    window.location.href = 'https://youtu.be/8qRWky53n7Y?t=28';
   };
 
   const tabs = [
